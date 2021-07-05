@@ -1,8 +1,8 @@
 ##
 
-from data_tools import *
-from graphic_tools import *
-from model_tools import *
+import data_tools as d
+import graphic_tools as g
+import model_tools as m
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -11,14 +11,14 @@ from dash.dependencies import Input, Output
 
 ##
 
-municipios = get_locations()
+municipios = d.get_locations()
 N = municipios['Habitantes'].sum()
-pars0 = [0.051, 0.8,   0.3,   0.1]
+pars0 = [0.051, 0.8, 0.3, 0.1]
 q0 = pars0[0]
 R0 = 0
 t_up = 3600
-today_str, ics = get_ics()
-totales = ventana(ics, n=7)
+today_str, ics = d.get_ics()
+totales = d.ventana(ics, n=7)
 
 ##
 
@@ -28,18 +28,18 @@ X0 = [S0, C0, R0, D0, N]
 t0 = range(len(totales.index))
 loss = 'linear'
 
-res_lsq = create_model(totales, X0, pars0)
+res_lsq = m.create_model(totales, X0, pars0)
 _, b, r, m = res_lsq.x
-print(b/(r+m))
+print(b / (r + m))
 
 print(f'loos:{loss},\nres:{res_lsq.x}')
 
 fig = {}
-fig['comparar'] = comparar(totales, F, X0, res_lsq)
-fig['pronosticar'] =pronosticar(totales, F, X0, res_lsq)
-fig['analizar'] = analizar_activos(totales, F, X0, res_lsq)
+fig['comparar'] = g.comparar(totales, X0, res_lsq)
+fig['pronosticar'] = g.pronosticar(totales, X0, res_lsq)
+fig['analizar'] = g.analizar_activos(totales, X0, res_lsq)
 
-#for key, value in fig.items(): pyo.plot(value, filename=key+'.html')
+# for key, value in fig.items(): pyo.plot(value, filename=key+'.html')
 
 app = dash.Dash()
 
@@ -47,14 +47,14 @@ app.layout = html.Div([
     html.H1(
         "Monitoreo del COVID-19 en la Zona Metropolitana de la Ciudad de Oaxaca"
     ),
-    #html.Div(id='actualizacion'),
+    # html.Div(id='actualizacion'),
     html.Div(id='graficas'),
     dcc.Interval(id='interval-component',
                  interval=t_up * 1000,
                  n_intervals=0)
 
 ],
-    style={'color': 'darkblue', 'font-family':"Indivisa"})
+    style={'color': 'darkblue', 'font-family': "Indivisa"})
 
 
 # @app.callback(
@@ -76,35 +76,36 @@ app.layout = html.Div([
 )
 def update_graph(n):
     print(datetime.now())
-    municipios = get_locations()
+    municipios = d.get_locations()
     N = municipios['Habitantes'].sum()
     q0 = 0.03
     R0 = 0
-    today_str, ics = get_ics()
+    today_str, ics = d.get_ics()
     today = datetime.strptime(today_str, '%Y%m%d')
-    totales = ventana(ics, n=1)
+    totales = d.ventana(ics, n=1)
     C0, D0, U0, N0 = totales.iloc[0].values
     S0 = q0 * (N - C0)
     X0 = [S0, C0, R0, D0, N]
     t0 = range(len(totales.index))
     pars0 = [q0, 0.37500937, 0.2594221, 0.02329369]
     loss = 'linear'
-    res_lsq = create_model(totales, X0, pars0)
+    res_lsq = m.create_model(totales, X0, pars0)
     print(f'loos:{loss},\nres:{res_lsq.x}')
     fig = {}
-    fig['comparar'] = comparar(totales, F, X0, res_lsq)
-    fig['pronosticar'] = pronosticar(totales, F, X0, res_lsq)
-    fig['analizar'] = analizar_activos(totales, F, X0, res_lsq)
+    fig['comparar'] = g.comparar(totales, X0, res_lsq)
+    fig['pronosticar'] = g.pronosticar(totales, X0, res_lsq)
+    fig['analizar'] = g.analizar_activos(totales, X0, res_lsq)
 
     return [html.H2(f"Actualización:{today.year}/{today.month}/{today.day}"),
-            dcc.Graph(figure={'data':list(fig['comparar'].values()),
-                'layout':{'title':"Comparación entre datos y simulación."}}),
+            dcc.Graph(figure={'data': list(fig['comparar'].values()),
+                              'layout': {'title': "Comparación entre datos y simulación."}}),
             dcc.Graph(figure={'data': list(fig['pronosticar'].values()),
-                'layout': {'title': "Pronósticos"}}),
+                              'layout': {'title': "Pronósticos"}}),
             dcc.Graph(figure={'data': list(fig['analizar'].values()),
-                'layout': {'title': "Análisis de casos activos"}})]
+                              'layout': {'title': "Análisis de casos activos"}})]
+
 
 # Add the server clause:
 if __name__ == '__main__':
-    #app.run_server(host='172.16.100.48')
+    # app.run_server(host='172.16.100.48')
     app.run_server()

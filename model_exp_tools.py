@@ -1,21 +1,25 @@
+import numpy as np
+from itertools import combinations
 from scipy.integrate import odeint
 from scipy.optimize import least_squares
 
 
-def model(X, t, q, b, g, m):
-    S, C, R, D, N = X
-    I = (C - R - D)
-    l = b * I / (q * N)
-    St = -l * S
-    Ct = l * S
-    Rt = g * I
-    Dt = m * I
-
-    return [St, Ct, Rt, Dt, 0]
+def model(X, t, *pars):
+    S, C, R, D = X
+    M = np.array(pars).reshape(4,10)
+    vec = [S,C,R,D]
+    for a,b in combinations([S,C,R,D], 2):
+        c = a*b
+        vec.append(c)
+    vec = np.array(vec).reshape(10,1)
+    output = np.matmul(M,vec).ravel()
+    print(np.round(output,4))
+    return output
 
 
 def F(X0, t, pars):
-    predictions = odeint(model, X0, t, args=tuple(pars), mxstep=5000)
+    pars = pars.reshape(1,-1)
+    predictions = odeint(model, X0, t, args=tuple(pars))
     return predictions
 
 
@@ -23,11 +27,12 @@ def fun(pars, t, y, X0):
     return F(X0, t, pars)[:, [1, 3]].ravel() - y
 
 
-def create_model(totales, X0, pars0, loss='linear', marco=14, bounds=(0, 2)):
+def create_model(totales, X0, pars0, loss='linear', marco=14, bounds=(-2, 2)):
     T = len(totales.index)
     t_train = range(T)
     # print(totales)
     init_date = totales.index[0]
+    print("Initial date: ", init_date)
 
     confirmados = 'Confirmados'
     defunciones = 'Defunciones'

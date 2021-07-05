@@ -1,33 +1,31 @@
 ##
 
-from data_tools import *
-from graphic_tools import *
-from model_tools import *
+import data_tools as d
+import graphic_tools as g
+import model_exp_tools as m
+import numpy as np
 
-##
-
-N = 6e5
-q0 = 0.01785
+municipios = d.get_locations()
+N = municipios['Habitantes'].sum()
+#pars0 = [0.051, 0.8, 0.3, 0.1]
+#q0 = 1.00#pars0[0]
+#pars0 = np.random.normal(scale=0.01, size=40)
+pars0 = np.zeros(40)
 R0 = 0
-today, ics = get_ics(fixed_date='20200723')
-#ics = get_ics()
-print(ics.head())
-totales = ventana(ics, n=1)
-
-##
-
+t_up = 3600
+today_str, ics = d.get_ics()
+totales = d.ventana(ics, n=7)
 C0, D0, U0, N0 = totales.iloc[0].values
-S0 = q0 * (N - C0)
-X0 = [S0, C0, R0, D0, N]
+S0 = (N - C0)
+X0 = np.array([S0, C0, R0, D0])/N
 t0 = range(len(totales.index))
-pars0 = [q0, 0.37500937, 0.2594221, 0.02329369]
 loss = 'linear'
-# %%
 
-res_lsq = create_model(totales, X0, pars0)
+res_lsq = m.create_model(totales, X0, pars0)
 
 print(f'loos:{loss},\nres:{res_lsq.x}')
 
-comparar(totales, F, X0, res_lsq)
-pronosticar(totales, F, X0, res_lsq)
-analizar_activos(totales, F, X0, res_lsq)
+fig = {}
+fig['comparar'] = g.comparar(totales, X0, res_lsq)
+#fig['pronosticar'] = g.pronosticar(totales, X0, res_lsq)
+#fig['analizar'] = g.analizar_activos(totales, X0, res_lsq)

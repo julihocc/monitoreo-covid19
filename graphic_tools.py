@@ -1,6 +1,10 @@
 from datetime import timedelta
+
+import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
+import matplotlib.pyplot as plt
+from model_exp_tools import F
 
 paleta = {
     'Confirmados': 'darkslateblue',
@@ -12,6 +16,7 @@ paleta = {
 }
 
 def simula(t_test, ypred):
+    ypred = np.array(ypred)
     simulacion = pd.DataFrame()
     simulacion['Confirmados'] = ypred[:, 1]
     simulacion['Recuperados'] = ypred[:, 2]
@@ -24,7 +29,8 @@ def simula(t_test, ypred):
     return simulacion
 
 
-def comparar(totales, F, X0, res_lsq):
+def comparar(totales, X0, res_lsq):
+    N = np.sum(X0)
     T = len(totales.index)
     #t_test = np.linspace(0, T, T * 100)
     t_test = list(range(T))
@@ -33,54 +39,11 @@ def comparar(totales, F, X0, res_lsq):
     primer_activo = totales.index[0]
     t_train = [str(x) for x in pd.date_range(start=primer_activo, periods=T)]
     simulacion = simula(t_test, ypred)
-    traces = {}
-    traces['total:confirmados'] = go.Scatter(
-        x=t_train,
-        y=totales['Confirmados'],
-        mode='markers',
-        name='Confirmados (totales)',
-        opacity=0.5,
-        marker=dict(
-            color=paleta['Confirmados'],
-            symbol='diamond'
-        )
-    )
-    traces['simulacion:confirmados'] = go.Scatter(
-        x=t_train,
-        y=simulacion.Confirmados,
-        mode='lines',
-        name='Confirmados (simulación)',
-        marker=dict(
-            color=paleta['Confirmados']
-        )
-    )
-
-    # plt.scatter(t_train, totales['Defunciones'])
-    # plt.plot(simulacion.index, simulacion.Defunciones, color='g')
-    # plt.show()
-    traces['total:defunciones'] = go.Scatter(
-        x=t_train,
-        y=totales['Defunciones'],
-        mode='markers',
-        name='Defunciones (totales)',
-        opacity=0.5,
-        marker=dict(
-            color=paleta['Defunciones'],
-            symbol='diamond'
-        )
-    )
-    traces['simulacion:defunciones'] = go.Scatter(
-        x=t_train,
-        y=simulacion.Defunciones,
-        mode='lines',
-        name='Defunciones (simulación)',
-        marker=dict(
-            color=paleta['Defunciones']
-        )
-    )
-    return traces
-
-##
+    plt.scatter(t_train, totales['Defunciones'], s=1)
+    plt.plot(simulacion.index, N*simulacion.Defunciones, color='r')
+    plt.scatter(t_train, totales['Confirmados'], s=1)
+    plt.plot(simulacion.index, N*simulacion.Confirmados, color='g')
+    plt.show()
 
 def panorama(totales, N):
     T = len(totales.index)
@@ -90,7 +53,7 @@ def panorama(totales, N):
     return datelist
 
 
-def proyectar(F, X0, t_lapse, res):
+def proyectar(X0, t_lapse, res):
     t_test = range(len(t_lapse))
     ypred = F(X0, t_test, res)
     simulacion = simula(t_test, ypred)
@@ -98,10 +61,10 @@ def proyectar(F, X0, t_lapse, res):
     return simulacion
 
 
-def pronosticar(totales, F, X0, res_lsq, N=120):
+def pronosticar(totales, X0, res_lsq, N=120):
     t_lapse = panorama(totales, N)
     # print(t_lapse)
-    futuro = proyectar(F, X0, t_lapse, res_lsq.x)
+    futuro = proyectar(X0, t_lapse, res_lsq.x)
     cats = ['Confirmados', 'Recuperados', 'Defunciones', 'Activos']
     #futuro[cats].plot(grid=True)
     #plt.show()
@@ -142,9 +105,9 @@ def inflexion(init_date, sim_lsq, tol=1e-3):
     return days, init_date + timedelta(days=days)
 
 
-def analizar_activos(totales, F, X0, res_lsq, N=120):
+def analizar_activos(totales, X0, res_lsq, N=120):
     t_lapse = panorama(totales, N)
-    futuro = proyectar(F, X0, t_lapse, res_lsq.x)
+    futuro = proyectar(X0, t_lapse, res_lsq.x)
     cats = ['Activos', 'Velocidad', 'Aceleración']
     escalas = {'Activos':1, 'Velocidad':10, 'Aceleración':100}
     traces = {}

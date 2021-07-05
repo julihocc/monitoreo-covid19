@@ -21,17 +21,20 @@ def get_date(n):
     return today_str
 
 
-def format_data(today_str, rubro):
+def format_data(today_str, rubro, static = False, folder=None):
     municipios = get_locations()
-    url = "https://datos.covid-19.conacyt.mx/Downloads/Files/Casos_Diarios_Municipio_{}_{}.csv"
 
-    confirmados_url = url.format(rubro, today_str)
-
-    s = requests.get(confirmados_url).content
-
-    confirmados_mx = pd.read_csv(
-        io.StringIO(s.decode('utf-8'))
-    ).set_index(['cve_ent', 'poblacion'])
+    if not static:
+        url = "https://datos.covid-19.conacyt.mx/Downloads/Files/Casos_Diarios_Municipio_{}_{}.csv"
+        confirmados_url = url.format(rubro, today_str)
+        s = requests.get(confirmados_url).content
+        confirmados_mx = pd.read_csv(
+            io.StringIO(s.decode('utf-8'))
+        ).set_index(['cve_ent', 'poblacion'])
+    else:
+        confirmados_mx = pd.read_csv(
+            "./{}/{}.csv".format(folder, rubro)
+        ).set_index(['cve_ent', 'poblacion'])
 
     es_zona_metro = confirmados_mx.index.isin(municipios.index)
 
