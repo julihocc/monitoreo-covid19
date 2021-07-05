@@ -6,13 +6,15 @@ from scipy.optimize import least_squares
 
 def model(X, t, *pars):
     S, C, R, D = X
-    M = np.array(pars).reshape(4,10)
+    M = np.array(pars).reshape(3,10)
     vec = [S,C,R,D]
     for a,b in combinations([S,C,R,D], 2):
         c = a*b
         vec.append(c)
     vec = np.array(vec).reshape(10,1)
-    output = np.matmul(M,vec).ravel()
+    q = np.matmul(M,vec).ravel()
+    w = -np.sum(q)
+    output = np.concatenate((q,w), axis=None)
     print(np.round(output,4))
     return output
 

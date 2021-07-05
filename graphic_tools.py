@@ -30,7 +30,6 @@ def simula(t_test, ypred):
 
 
 def comparar(totales, X0, res_lsq):
-    N = np.sum(X0)
     T = len(totales.index)
     #t_test = np.linspace(0, T, T * 100)
     t_test = list(range(T))
@@ -40,9 +39,9 @@ def comparar(totales, X0, res_lsq):
     t_train = [str(x) for x in pd.date_range(start=primer_activo, periods=T)]
     simulacion = simula(t_test, ypred)
     plt.scatter(t_train, totales['Defunciones'], s=1)
-    plt.plot(simulacion.index, N*simulacion.Defunciones, color='r')
+    plt.plot(simulacion.index, simulacion.Defunciones, color='r')
     plt.scatter(t_train, totales['Confirmados'], s=1)
-    plt.plot(simulacion.index, N*simulacion.Confirmados, color='g')
+    plt.plot(simulacion.index, simulacion.Confirmados, color='g')
     plt.show()
 
 def panorama(totales, N):
