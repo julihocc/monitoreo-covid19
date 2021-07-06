@@ -7,14 +7,16 @@ from scipy.optimize import least_squares
 def model(X, t, *pars):
     S, C, R, D = X
     M = np.array(pars).reshape(3,10)
-    vec = [S,C,R,D]
-    for a,b in combinations([S,C,R,D], 2):
+    I = (C - R - D)
+    vec = [S,I,R,D]
+    for a,b in combinations([S,I,R,D], 2):
         c = a*b
         vec.append(c)
     vec = np.array(vec).reshape(10,1)
-    q = np.matmul(M,vec).ravel()
-    w = -np.sum(q)
-    output = np.concatenate((q,w), axis=None)
+    St, It, Rt = np.matmul(M,vec).ravel()
+    Dt = -St-It-Rt
+    Ct = It+Rt+Dt
+    output = np.array([St, Ct, Rt, Dt])
     print(np.round(output,4))
     return output
 
